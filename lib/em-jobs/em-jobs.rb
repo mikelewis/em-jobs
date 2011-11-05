@@ -20,13 +20,21 @@ module EventMachine
 
         # Handle nil
         unless defferable_information
-          raise "Invalid job name! Please define one in the class declaration"
+          raise Exceptions::UndefinedJob.new("#{meth} is not a defined job.")
         end
 
         defferable = Helpers.create_defferable(self, defferable_information, meth, args)
         job_queue.push(defferable)
         job_queue.pop do |d|
           d.job(*args)
+        end
+      end
+
+      def method_missing(meth, *args, &blk)
+        if meth =~ /^queue_(.*)$/
+          raise Exceptions::UndefinedJob.new("You called queue_#{$1}, however #{$1} is not a defined job.")
+        else
+          super
         end
       end
     end

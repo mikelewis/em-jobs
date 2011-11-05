@@ -20,6 +20,8 @@ module EventMachine
 
       def job(*args)
         @instance.send(@method, *args)
+      rescue ArgumentError => e
+        raise Exceptions::JobArgumentError.new("You supplied job: #{@method} with the #{e.message}")
       end
     end
   end

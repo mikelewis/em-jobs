@@ -9,7 +9,11 @@ module EventMachine
         success_callback, failure_callback = [success_method, failure_method].map do |callback|
           case callback
           when Symbol
+            begin
             instance.method(callback)
+            rescue NameError
+              raise Exceptions::InvalidCallbackError.new("#{callback} is not a defined method for your callback.")
+            end
           when Proc
             proc { |*results| instance.instance_exec(*results, &callback) }
           else # if not given
