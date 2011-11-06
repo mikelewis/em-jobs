@@ -4,22 +4,27 @@ module EventMachine
       include ::EM::Deferrable
       attr_accessor :channel, :defer
 
-      def initialize(instance, method, defer)
-        @instance, @method = instance, method
-        instance_klass = (class << @instance; self; end)
-
-        job_instance = self # need to store a reference to self as we are entering a different context below
-        instance_klass.class_eval do
-          [:succeed, :fail].each do |callback|
-            define_method(callback) do |*args|
-              job_instance.send(callback, *args) # now call job.succeed or job.fail which will trigger EM Deferrable Callback
-            end
-          end
-        end
+      def initialize(instance, method, defer, defined_callbacks)
+        @instance, @method, @defer, @defined_callbacks = instance, method, defer, defined_callbacks
       end
 
       def job(*args)
-        @instance.send(@method, *args)
+        callback = proc do |results|
+          if results.is_a?(Array) && results.size >= 1
+            type = results.shift
+            type = :succeed if type == :success
+            if @defined_callbacks[type]
+              send(type, *results)
+            end
+          end
+        end # will call succeed or fail for defferable
+        op = proc { @instance.send(@method, *args) }
+        if @defer
+          EM.defer(op, callback)
+        else
+          results = op.call
+          callback.call(results)
+        end
       rescue ArgumentError => e
         raise Exceptions::JobArgumentError.new("You supplied job: #{@method} with the #{e.message}")
       rescue NoMethodError => e

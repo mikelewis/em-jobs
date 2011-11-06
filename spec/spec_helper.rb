@@ -12,48 +12,53 @@ class Garage
 
   setup_job :undefined_method
 
-  setup_job :install_engine, :on_success => lambda {|result| set_result_and_quit(result)},
+  setup_job :install_engine, :on_success => lambda {|result| set_result_and_quit(:awesome); nil},
     :on_failure => :failed_engine, :defer => true
 
   attr_accessor :result
 
   def initialize
     @result = nil
+    @thread = Thread.current
   end
 
   def install_engine(type)
+    @thread = Thread.current
     if type == :ford
-      fail(:bad)
+      return :fail, :bad
     else
-      succeed(:good)
+      return :success, :good
     end
   end
 
   def failed_engine(results)
-    set_result_and_quit(results)
+    set_result_and_quit(:crap)
+    nil
   end
 
   def lone_job(input)
     set_result_and_quit(input + 3)
+    nil
   end
 
   def failed_engine(result)
     set_result_and_quit(result)
+    nil
   end
 
   def bad_job(num)
     if num > 3
-      fail(:too_high)
+      return :fail, :too_high
     else
-      succeed(:awesome)
+      return :success, :awesome
     end
   end
 
   def paint_car(color)
     if color == "red"
-      succeed(5)
+      return :success, 5
     else
-      fail(:not_supported)
+      return :fail, :not_supported
     end
   end
 
@@ -62,7 +67,7 @@ class Garage
   end
 
   def set_result_and_quit(result)
-    @result = [Thread.current, result]
+    @result = [@thread, result]
     EM.stop
   end
 

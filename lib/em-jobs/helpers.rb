@@ -21,7 +21,7 @@ module EventMachine
           end
         end
 
-        defferable = Job.new(instance, meth, information[:defer])
+        defferable = Job.new(instance, meth, information[:defer], :succeed => success_callback, :fail => failure_callback )
         defferable.callback(&success_callback)
         defferable.errback(&failure_callback)
 
