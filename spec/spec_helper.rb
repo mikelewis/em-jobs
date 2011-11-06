@@ -15,11 +15,34 @@ class Garage
   setup_job :install_engine, :on_success => lambda {|result| set_result_and_quit(:awesome); nil},
     :on_failure => :failed_engine, :defer => true
 
+  setup_job :install_brakes, :defer => true
+
+  setup_job :jump, :defer => true
+
+  setup_job :crouch, :defer => true
+
   attr_accessor :result
 
   def initialize
     @result = nil
     @thread = Thread.current
+  end
+
+  def jump(type)
+    sleep 2
+    return :success, :yes if type == :mustang
+    [:fail, :no]
+  end
+
+  def crouch(type)
+    sleep 1
+    return :success, :yes if type == :mustang
+    [:fail, :no]
+  end
+
+  def install_brakes(type)
+    return :success, :yes if type == :mustang
+    [:fail, :no]
   end
 
   def install_engine(type)
@@ -37,8 +60,12 @@ class Garage
   end
 
   def lone_job(input)
-    set_result_and_quit(input + 3)
-    nil
+    if input.is_a? Symbol
+      return [:success, 5]
+    else
+      set_result_and_quit(input + 3)
+      nil
+    end
   end
 
   def failed_engine(result)
@@ -72,3 +99,4 @@ class Garage
   end
 
 end
+

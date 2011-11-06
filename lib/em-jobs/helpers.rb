@@ -6,6 +6,12 @@ module EventMachine
       def create_defferable(instance, information, meth, args)
         success_method, failure_method = information[:on_success], information[:on_failure]
 
+        if args.last.is_a?(Hash) && (args.last.include?(:on_success) || args.last.include?(:on_failure))
+          h = args.pop
+          success_method = (h[:on_success] && [true, h[:on_success]])  || success_method
+          failure_method = (h[:on_failure] && [true, h[:on_failure]])  || failure_method
+        end
+
         success_callback, failure_callback = [success_method, failure_method].map do |callback|
           case callback
           when Symbol
@@ -16,6 +22,8 @@ module EventMachine
             end
           when Proc
             proc { |*results| instance.instance_exec(*results, &callback) }
+          when Array
+            callback[1]
           else # if not given
             proc { |*results| }
           end

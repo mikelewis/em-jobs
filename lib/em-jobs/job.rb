@@ -28,7 +28,11 @@ module EventMachine
       rescue ArgumentError => e
         raise Exceptions::JobArgumentError.new("You supplied job: #{@method} with the #{e.message}")
       rescue NoMethodError => e
-        raise Exceptions::UndefinedJob.new("You defined #{@method} as a job, but you have not created it yet.")
+        if e.name == @method
+          raise Exceptions::UndefinedJob.new("You defined #{@method} as a job, but you have not created it yet.")
+        else
+          raise e
+        end
       end
     end
   end

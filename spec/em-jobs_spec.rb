@@ -63,6 +63,48 @@ describe EventMachine::Jobs do
 
       @garage.result[1].should == 6
     end
+
+
+    context "Custom callback" do
+      it "should be able to pass in a custom success callback when queue'ing up a job" do
+        result = nil
+        EM.run do
+          @garage.queue_install_brakes(:mustang, :on_success => proc {|results| result = results; EM.stop})
+        end
+
+        result.should == :yes
+      end
+
+      it "should be able to pass in a custom success callback when queue'ing up a job" do
+        result = nil
+        EM.run do
+          @garage.queue_install_brakes(:ford, :on_failure => proc {|results| result = results; EM.stop})
+        end
+
+        result.should == :no
+      end
+
+      it "should override default callbacks" do
+        result = nil
+        EM.run do
+          @garage.queue_paint_car("red", :on_success => proc {|results| result =  results; EM.stop})
+        end
+        result.should == 5
+      end
+
+      it "should override default callbacks and go back to default" do
+        EM.run do
+          callback = proc do |results|
+            @garage.queue_paint_car("yellow")
+          end
+          @garage.queue_paint_car("red", :on_success => callback)
+        end
+
+        @garage.result[1].should == :not_supported
+      end
+
+    end
+
     context "defer" do
       it "should run a job in EM defer if it was specified" do
         EM.run do
@@ -92,7 +134,6 @@ describe EventMachine::Jobs do
       end
 
     end
-=begin
     context "non-defer" do
       it "should not run a job in EM defer if it wasnt specified" do
         EM.run do
@@ -121,6 +162,31 @@ describe EventMachine::Jobs do
         results.should == 5
       end
     end
-=end
+    it "should handle lots of em defer" do
+      sum = 0
+      EM.run do
+        5.times do
+          meth = rand > 0.5 ? :jump : :crouch
+          @garage.queue_job(meth, :mustang,
+                            :on_success => proc {|results| sum += 1; EM.stop if sum == 5})
+        end
+      end
+
+      sum.should == 5
+    end
+
+    it "should handle lots of em defer and non defers" do
+      sum = 0
+      EM.run do
+        20.times do
+          meth = rand < 0.3 ? :jump : :lone_job
+          op = proc {|results| sum += 1; EM.stop if sum == 20}
+          Garage.new.queue_job(meth, :mustang,
+                            :on_success => op)
+        end
+      end
+
+      sum.should == 20
+    end
   end
 end
