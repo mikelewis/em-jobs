@@ -48,7 +48,49 @@ describe EventMachine::Jobs do
       end.should raise_error(EventMachine::Jobs::Exceptions::InvalidCallbackError, "this_method_doesnt_exist is not a defined method for your callback.")
     end
 
+    it "should raise an error when a job does not exist" do
+      lambda do
+        EM.run do
+          @garage.queue_undefined_method
+        end
+      end.should raise_error(EventMachine::Jobs::Exceptions::UndefinedJob, "You defined undefined_method as a job, but you have not created it yet.")
+    end
+
+    it "should run a method without callbacks" do
+      EM.run do
+        @garage.queue_lone_job(3)
+      end
+
+      @garage.result[1].should == 6
+    end
+
     context "defer" do
+      it "should run a job in EM defer if it was specified" do
+        EM.run do
+          @garage.queue_install_engine(:mustang)
+        end
+
+        thread, results = @garage.result
+        Thread.current.should_not == thread
+      end
+
+      it "should fail" do
+        EM.run do
+          @garage.queue_install_engine(:ford)
+        end
+
+        thread, results = @garage.result
+        results.should == :bad
+      end
+
+      it "should succeed" do
+        EM.run do
+          @garage.queue_install_engine(:mustang)
+        end
+
+        thread, results = @garage.result
+        results.should == :good
+      end
 
     end
 

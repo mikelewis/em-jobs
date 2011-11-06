@@ -8,10 +8,37 @@ class Garage
 
   setup_job :bad_job, :on_success => :this_method_doesnt_exist
 
+  setup_job :lone_job
+
+  setup_job :undefined_method
+
+  setup_job :install_engine, :on_success => lambda {|result| set_result_and_quit(result)},
+    :on_failure => :failed_engine, :defer => true
+
   attr_accessor :result
 
   def initialize
     @result = nil
+  end
+
+  def install_engine(type)
+    if type == :ford
+      fail(:bad)
+    else
+      succeed(:good)
+    end
+  end
+
+  def failed_engine(results)
+    set_result_and_quit(results)
+  end
+
+  def lone_job(input)
+    set_result_and_quit(input + 3)
+  end
+
+  def failed_engine(result)
+    set_result_and_quit(result)
   end
 
   def bad_job(num)

@@ -18,7 +18,6 @@ module EventMachine
         meth = meth.to_sym
         defferable_information = self.class.__job_defferables__[meth]
 
-        # Handle nil
         unless defferable_information
           raise Exceptions::UndefinedJob.new("#{meth} is not a defined job.")
         end

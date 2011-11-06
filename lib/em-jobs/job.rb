@@ -22,6 +22,8 @@ module EventMachine
         @instance.send(@method, *args)
       rescue ArgumentError => e
         raise Exceptions::JobArgumentError.new("You supplied job: #{@method} with the #{e.message}")
+      rescue NoMethodError => e
+        raise Exceptions::UndefinedJob.new("You defined #{@method} as a job, but you have not created it yet.")
       end
     end
   end
